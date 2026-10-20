@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo List</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #273449;
+    --border: #334155;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --accent: #38bdf8;
+    --accent-strong: #0ea5e9;
+    --done: #34d399;
+    --danger: #f87171;
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, "Noto Sans TC", sans-serif;
+    background: radial-gradient(1200px 800px at 80% -10%, #1e3a5f 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 16px;
+  }
+  .app {
+    width: 100%;
+    max-width: 560px;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  h1 span { color: var(--accent); }
+  .count-badge {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .input-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1rem;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-row input::placeholder { color: var(--text-dim); }
+  .input-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(56,189,248,.18);
+  }
+  .input-row button {
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    color: #082f49;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0 22px;
+    cursor: pointer;
+    transition: transform .12s, filter .2s;
+  }
+  .input-row button:hover { filter: brightness(1.1); }
+  .input-row button:active { transform: scale(.96); }
+
+  ul.todo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    animation: pop .18s ease;
+    transition: border-color .2s;
+  }
+  .todo-item:hover { border-color: var(--accent); }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .check {
+    flex: 0 0 auto;
+    width: 24px; height: 24px;
+    border: 2px solid var(--text-dim);
+    border-radius: 50%;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all .2s;
+    background: transparent;
+  }
+  .check:hover { border-color: var(--done); }
+  .check svg { width: 14px; height: 14px; stroke: #082f49; stroke-width: 3; fill: none;
+                stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+  .todo-item.done .check {
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .todo-item.done .check svg { opacity: 1; }
+  .todo-text {
+    flex: 1;
+    font-size: 1rem;
+    line-height: 1.4;
+    word-break: break-word;
+    transition: color .2s;
+  }
+  .todo-item.done .todo-text {
+    color: var(--text-dim);
+    text-decoration: line-through;
+  }
+  .del-btn {
+    flex: 0 0 auto;
+    width: 32px; height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background .2s, color .2s;
+  }
+  .del-btn:hover { background: rgba(248,113,113,.15); color: var(--danger); }
+
+  .empty {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 40px 0;
+    font-size: .95rem;
+  }
+  .empty .icon { font-size: 2.2rem; margin-bottom: 10px; }
+
+  .clear-row {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .clear-row .stats { font-size: .8rem; color: var(--text-dim); }
+  .clear-done {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .clear-done:hover { border-color: var(--danger); color: var(--danger); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Todo<span>.</span></h1>
+    <div class="count-badge" id="countBadge">0 items</div>
+  </header>
+
+  <div class="input-row">
+    <input type="text" id="todoInput" placeholder="輸入新待辦事項…" maxlength="200" autocomplete="off">
+    <button id="addBtn" aria-label="加入">+</button>
+  </div>
+
+  <ul class="todo-list" id="todoList"></ul>
+  <div class="empty" id="emptyState" style="display:none">
+    <div class="icon">🗒️</div>
+    尚無待辦事項<br>輸入上面開始吧！
+  </div>
+
+  <div class="clear-row" id="clearRow" style="display:none">
+    <div class="stats" id="stats"></div>
+    <button class="clear-done" id="clearDoneBtn">清除已完成</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "modern_todos_v1";
+const $input  = document.getElementById("todoInput");
+const $list   = document.getElementById("todoList");
+const $empty  = document.getElementById("emptyState");
+const $clearRow = document.getElementById("clearRow");
+const $stats  = document.getElementById("stats");
+const $badge  = document.getElementById("countBadge");
+
+let todos = load();
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+}
+
+function render() {
+  $list.innerHTML = "";
+  todos.forEach(t => {
+    const li = document.createElement("li");
+    li.className = "todo-item" + (t.done ? " done" : "");
+
+    const check = document.createElement("button");
+    check.className = "check";
+    check.setAttribute("aria-label", t.done ? "標記未完成" : "標記完成");
+    check.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>';
+    check.onclick = () => { t.done = !t.done; save(); render(); };
+
+    const span = document.createElement("span");
+    span.className = "todo-text";
+    span.textContent = t.text;
+
+    const del = document.createElement("button");
+    del.className = "del-btn";
+    del.setAttribute("aria-label", "刪除");
+    del.textContent = "✕";
+    del.onclick = () => { todos = todos.filter(x => x.id !== t.id); save(); render(); };
+
+    li.append(check, span, del);
+    $list.appendChild(li);
+  });
+
+  const total = todos.length;
+  const doneCount = todos.filter(t => t.done).length;
+  $badge.textContent = `${total} item${total === 1 ? "" : "s"}`;
+  $empty.style.display = total ? "none" : "block";
+  $clearRow.style.display = total ? "flex" : "none";
+  $stats.textContent = `${doneCount} / ${total} 已完成`;
+}
+
+function addTodo() {
+  const text = $input.value.trim();
+  if (!text) return;
+  todos.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), text, done: false });
+  $input.value = "";
+  $input.focus();
+  save();
+  render();
+}
+
+document.getElementById("addBtn").onclick = addTodo;
+$input.addEventListener("keydown", e => { if (e.key === "Enter") addTodo(); });
+document.getElementById("clearDoneBtn").onclick = () => {
+  todos = todos.filter(t => !t.done);
+  save(); render();
+};
+
+render();
+</script>
+</body>
+</html>
